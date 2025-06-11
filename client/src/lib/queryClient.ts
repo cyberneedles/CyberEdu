@@ -7,26 +7,39 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  // Prepend the backend API base URL from environment variables
-  const apiUrl = `${import.meta.env.VITE_API_BASE_URL || ''}${url}`;
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes
+    },
+  },
+});
+
+interface RequestOptions extends RequestInit {
+  method?: string;
+  body?: any;
+}
+
+export async function apiRequest(url: string, options: RequestOptions = {}) {
+  const { method = 'GET', body, ...rest } = options;
   
-  const res = await fetch(apiUrl, {
+  const response = await fetch(url, {
     method,
     headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
+      'Content-Type': 'application/json',
+      ...options.headers,
     },
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    body: body ? JSON.stringify(body) : undefined,
+    ...rest,
   });
 
-  await throwIfResNotOk(res);
-  return res;
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -50,18 +63,3 @@ export const getQueryFn: <T>(options: {
     await throwIfResNotOk(res);
     return await res.json();
   };
-
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
-    },
-    mutations: {
-      retry: false,
-    },
-  },
-});

@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,13 +9,18 @@ import LeadForm from "@/components/forms/lead-form";
 import QuizComponent from "@/components/quiz/quiz-component";
 import { trackEvent } from "@/lib/analytics";
 import { useQuery } from "@tanstack/react-query";
-import { Course, Testimonial } from "@shared/schema";
-import { useEffect, useRef, useState } from "react";
-import { useMouseParallax, useParallax } from "@/hooks/use-parallax";
+import { apiRequest } from '@/lib/queryClient';
+import { useMouseParallax } from '@/hooks/use-mouse-parallax';
+import { useParallax } from '@/hooks/use-parallax';
+import { EnhancedLeadCapture } from '@/components/lead/enhanced-lead-capture';
+import { CourseCard } from '@/components/course-card';
+import { TestimonialCard } from '@/components/testimonial-card';
+import { FAQAccordion } from '@/components/faq-accordion';
+import { BlogCard } from '@/components/blog-card';
+import { useEffect, useRef } from "react";
 import { ScrollReveal, StaggerReveal } from "@/hooks/use-scroll-reveal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useNavigate } from 'react-router-dom';
-
 
 export default function Home() {
   const observerRef = useRef<IntersectionObserver>();
@@ -135,12 +141,36 @@ export default function Home() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  const { data: courses = [] } = useQuery<Course[]>({
-    queryKey: ["/api/courses"],
+  const { data: courses = [] } = useQuery({
+    queryKey: ['courses'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/courses');
+      return response.data;
+    }
   });
 
-  const { data: testimonials = [] } = useQuery<Testimonial[]>({
-    queryKey: ["/api/testimonials", { approved: true }],
+  const { data: testimonials = [] } = useQuery({
+    queryKey: ['testimonials'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/testimonials');
+      return response.data;
+    }
+  });
+
+  const { data: faqs = [] } = useQuery({
+    queryKey: ['faqs'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/faqs');
+      return response.data;
+    }
+  });
+
+  const { data: blogPosts = [] } = useQuery({
+    queryKey: ['blog'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/blog');
+      return response.data;
+    }
   });
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { useState, useCallback } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,12 +13,39 @@ import QuizComponent from "@/components/quiz/quiz-component";
 import type { Course } from "@shared/schema";
 import { FormLabel } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { apiRequest } from '@/lib/queryClient';
+import { Calendar, Clock, Users, BookOpen, GraduationCap, Briefcase, Tool, Award } from 'lucide-react';
+
+interface CourseDetail extends Omit<Course, 'fees'> {
+  curriculum: Array<{
+    sectionTitle: string;
+    items: string[];
+  }>;
+  batches: Array<{
+    startDate: string;
+    time: string;
+    mode: string;
+    instructor: string;
+  }>;
+  fees: Array<{
+    label: string;
+    amount: number;
+    notes: string;
+  }>;
+  overview: string;
+  careerOpportunities: string[];
+  toolsAndTechnologies: string;
+  whatYouWillLearn: string;
+  mainImage: string;
+  syllabusUrl: string;
+}
 
 export default function CourseDetail() {
   const { slug } = useParams<{ slug: string }>();
   const [showSyllabusForm, setShowSyllabusForm] = useState(false);
   const [isLeadFormOpen, setIsLeadFormOpen] = useState(false);
   const [leadFormSource, setLeadFormSource] = useState('');
+  const [selectedBatch, setSelectedBatch] = useState<CourseDetail['batches'][0] | null>(null);
 
   const handleEnrollClick = useCallback(() => {
     setLeadFormSource("Course Detail - Enroll Now");
@@ -30,34 +57,9 @@ export default function CourseDetail() {
     setIsLeadFormOpen(true);
   }, []);
 
-  const { data: course, isLoading, error } = useQuery<Course | null>({
-    queryKey: ["course", slug],
-    queryFn: async () => {
-      if (!slug) return null;
-      const response = await fetch(`/api/courses/${slug}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const fetchedCourse: Course = await response.json();
-      console.log('Fetched raw course data:', fetchedCourse);
-
-      // Ensure all potentially null fields default to empty strings or empty arrays
-      const parsedCourse = {
-        ...fetchedCourse,
-        curriculum: Array.isArray(fetchedCourse.curriculum) ? fetchedCourse.curriculum : [],
-        batches: Array.isArray(fetchedCourse.batches) ? fetchedCourse.batches : [],
-        fees: Array.isArray(fetchedCourse.fees) ? fetchedCourse.fees : [],
-        careerOpportunities: Array.isArray(fetchedCourse.careerOpportunities) ? fetchedCourse.careerOpportunities : [],
-        mainImage: fetchedCourse.mainImage || "",
-        logo: fetchedCourse.logo || "",
-        toolsAndTechnologies: fetchedCourse.toolsAndTechnologies || "",
-        whatYouWillLearn: fetchedCourse.whatYouWillLearn || "",
-        syllabusUrl: fetchedCourse.syllabusUrl || "",
-      };
-      console.log('Processed course data in CourseDetail:', parsedCourse);
-      return parsedCourse;
-    },
-    enabled: !!slug,
+  const { data: course, isLoading, error } = useQuery<CourseDetail>({
+    queryKey: [`/api/courses/${slug}`],
+    queryFn: () => apiRequest(`/api/courses/${slug}`),
   });
 
   const { data: quiz } = useQuery({
@@ -95,6 +97,29 @@ export default function CourseDetail() {
       </div>
     );
   }
+
+  const handleSyllabusDownloadClick = async (title: string, slug: string, syllabusUrl: string | null) => {
+    if (!syllabusUrl) {
+      alert('Syllabus not available for this course.');
+      return;
+    }
+
+    try {
+      const response = await fetch(syllabusUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title.toLowerCase().replace(/\s+/g, '-')}-syllabus.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading syllabus:', error);
+      alert('Error downloading syllabus. Please try again later.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground dark:bg-[#1a1a1a] dark:text-[#e0e0e0]">
@@ -319,7 +344,7 @@ export default function CourseDetail() {
                           <div className="flex items-center text-muted-foreground mb-3">
                             <i className="fas fa-clock mr-3 text-primary"></i>
                             <span className="font-semibold text-foreground dark:text-white">Time:</span>
-                            <span className="ml-2 text-muted-foreground dark:text-[#b0b0b0]">{batch.startTime} - {batch.endTime}</span>
+                            <span className="ml-2 text-muted-foreground dark:text-[#b0b0b0]">{batch.time}</span>
                                     </div>
                           <div className="flex items-center text-muted-foreground mb-3">
                             <i className="fas fa-laptop-code mr-3 text-primary"></i>

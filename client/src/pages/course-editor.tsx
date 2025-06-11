@@ -1,51 +1,67 @@
-import { useState } from "react";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { EnhancedCourseForm } from '@/components/enhanced-course-form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 import { useLocation } from "wouter";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { EnhancedCourseForm } from "@/components/enhanced-course-form";
 import { CoursePreviewPane } from "@/components/course-preview-pane";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 
 export default function CourseEditor() {
   const [, setLocation] = useLocation();
   const [showPreview, setShowPreview] = useState(true);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
 
-  const createCourseMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await fetch("/api/courses", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+  const { data: courses = [], isLoading } = useQuery({
+    queryKey: ['courses'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/courses');
+      return response.data;
+    }
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data) => {
+      const response = await apiRequest('/api/courses', {
+        method: 'POST',
+        body: JSON.stringify(data)
       });
-      if (!response.ok) throw new Error("Failed to create course");
-      return response.json();
+      return response.data;
     },
     onSuccess: () => {
+      setIsCreateOpen(false);
       toast({
-        title: "Success",
-        description: "Course created successfully",
+        title: 'Success',
+        description: 'Course created successfully'
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
-      setLocation("/admin");
+    }
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async (data) => {
+      const response = await apiRequest(`/api/courses/${selectedCourse?.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      return response.data;
     },
-    onError: () => {
+    onSuccess: () => {
+      setIsEditOpen(false);
       toast({
-        title: "Error",
-        description: "Failed to create course",
-        variant: "destructive",
+        title: 'Success',
+        description: 'Course updated successfully'
       });
-    },
+    }
   });
 
   const onSubmit = (data: any) => {
-    createCourseMutation.mutate(data);
+    createMutation.mutate(data);
   };
 
   return (
@@ -85,18 +101,30 @@ export default function CourseEditor() {
         <div className={`grid ${showPreview ? "grid-cols-2" : "grid-cols-1"} gap-8 h-[calc(100vh-8rem)]`}>
           {/* Form Section */}
           <div className="overflow-y-auto">
-            <Card>
-              <CardHeader>
-                <CardTitle>Course Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <EnhancedCourseForm
-                  onSubmit={onSubmit}
-                  isLoading={createCourseMutation.isPending}
-                  isEdit={false}
-                />
-              </CardContent>
-            </Card>
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Course Details</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                      Name
+                    </Label>
+                    <Input id="name" value={selectedCourse?.name} onChange={(e) => setSelectedCourse({ ...selectedCourse, name: e.target.value })} className="col-span-3" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="description" className="text-right">
+                      Description
+                    </Label>
+                    <Input id="description" value={selectedCourse?.description} onChange={(e) => setSelectedCourse({ ...selectedCourse, description: e.target.value })} className="col-span-3" />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" onClick={() => onSubmit(selectedCourse)}>Save changes</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Preview Section */}

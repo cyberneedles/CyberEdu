@@ -1,18 +1,18 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy, limit, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { getAnalytics } from 'firebase/analytics';
 import { signInWithEmailAndPassword as firebaseAuthSignInWithEmailAndPassword } from 'firebase/auth';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCdKNvIUrvDGuidfn-Jfmh2HVBE3KYOQDI",
-  authDomain: "cyberedu-a094a.firebaseapp.com",
-  projectId: "cyberedu-a094a",
-  storageBucket: "cyberedu-a094a.appspot.com",
-  messagingSenderId: "273080704756",
-  appId: "1:273080704756:web:d0965576ac6f9c48fc08a1",
-  measurementId: "G-0L1L830GMY"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 // Debug: Log the config (without sensitive values)
@@ -23,7 +23,6 @@ console.log('Firebase Config:', {
   hasStorageBucket: !!firebaseConfig.storageBucket,
   hasMessagingSenderId: !!firebaseConfig.messagingSenderId,
   hasAppId: !!firebaseConfig.appId,
-  hasMeasurementId: !!firebaseConfig.measurementId
 });
 
 // Initialize Firebase
@@ -95,13 +94,20 @@ export const createCourse = async (courseData: Omit<Course, 'id' | 'createdAt' |
   return docRef.id;
 };
 
-export const getCourses = async () => {
-  const snapshot = await db.collection('courses').get();
-  return snapshot.docs.map(doc => ({
+export async function getCourses() {
+  const coursesCollection = collection(db, 'courses');
+  const snapshot = await getDocs(coursesCollection);
+  return snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
     id: doc.id,
-    ...doc.data()
-  })) as Course[];
-};
+    ...doc.data(),
+  }));
+}
+
+export async function addCourse(courseData: any) {
+  const coursesCollection = collection(db, 'courses');
+  const docRef = await addDoc(coursesCollection, courseData);
+  return { id: docRef.id, ...courseData };
+}
 
 export const createTestimonial = async (testimonialData: Omit<Testimonial, 'id' | 'createdAt'>) => {
   const docRef = await db.collection('testimonials').add({
@@ -111,13 +117,20 @@ export const createTestimonial = async (testimonialData: Omit<Testimonial, 'id' 
   return docRef.id;
 };
 
-export const getTestimonials = async () => {
-  const snapshot = await db.collection('testimonials').get();
-  return snapshot.docs.map(doc => ({
+export async function getTestimonials() {
+  const testimonialsCollection = collection(db, 'testimonials');
+  const snapshot = await getDocs(testimonialsCollection);
+  return snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
     id: doc.id,
-    ...doc.data()
-  })) as Testimonial[];
-};
+    ...doc.data(),
+  }));
+}
+
+export async function addTestimonial(testimonialData: any) {
+  const testimonialsCollection = collection(db, 'testimonials');
+  const docRef = await addDoc(testimonialsCollection, testimonialData);
+  return { id: docRef.id, ...testimonialData };
+}
 
 export const createBlogPost = async (postData: Omit<BlogPost, 'id' | 'createdAt' | 'updatedAt'>) => {
   const docRef = await db.collection('blog').add({
@@ -128,13 +141,20 @@ export const createBlogPost = async (postData: Omit<BlogPost, 'id' | 'createdAt'
   return docRef.id;
 };
 
-export const getBlogPosts = async () => {
-  const snapshot = await db.collection('blog').get();
-  return snapshot.docs.map(doc => ({
+export async function getBlogPosts() {
+  const blogCollection = collection(db, 'blog');
+  const snapshot = await getDocs(blogCollection);
+  return snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
     id: doc.id,
-    ...doc.data()
-  })) as BlogPost[];
-};
+    ...doc.data(),
+  }));
+}
+
+export async function addBlogPost(blogData: any) {
+  const blogCollection = collection(db, 'blog');
+  const docRef = await addDoc(blogCollection, blogData);
+  return { id: docRef.id, ...blogData };
+}
 
 export const createFAQ = async (faqData: Omit<FAQ, 'id' | 'createdAt'>) => {
   const docRef = await db.collection('faqs').add({
@@ -144,13 +164,20 @@ export const createFAQ = async (faqData: Omit<FAQ, 'id' | 'createdAt'>) => {
   return docRef.id;
 };
 
-export const getFAQs = async () => {
-  const snapshot = await db.collection('faqs').get();
-  return snapshot.docs.map(doc => ({
+export async function getFAQs() {
+  const faqsCollection = collection(db, 'faqs');
+  const snapshot = await getDocs(faqsCollection);
+  return snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
     id: doc.id,
-    ...doc.data()
-  })) as FAQ[];
-};
+    ...doc.data(),
+  }));
+}
+
+export async function addFAQ(faqData: any) {
+  const faqsCollection = collection(db, 'faqs');
+  const docRef = await addDoc(faqsCollection, faqData);
+  return { id: docRef.id, ...faqData };
+}
 
 export const createLead = async (leadData: Omit<Lead, 'id' | 'createdAt'>) => {
   const docRef = await db.collection('leads').add({
@@ -161,13 +188,20 @@ export const createLead = async (leadData: Omit<Lead, 'id' | 'createdAt'>) => {
   return docRef.id;
 };
 
-export const getLeads = async () => {
-  const snapshot = await db.collection('leads').get();
-  return snapshot.docs.map(doc => ({
+export async function getLeads() {
+  const leadsCollection = collection(db, 'leads');
+  const snapshot = await getDocs(leadsCollection);
+  return snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
     id: doc.id,
-    ...doc.data()
-  })) as Lead[];
-};
+    ...doc.data(),
+  }));
+}
+
+export async function addLead(leadData: any) {
+  const leadsCollection = collection(db, 'leads');
+  const docRef = await addDoc(leadsCollection, leadData);
+  return { id: docRef.id, ...leadData };
+}
 
 // Authentication functions
 export const signInWithEmailAndPassword = async (email: string, password: string) => {

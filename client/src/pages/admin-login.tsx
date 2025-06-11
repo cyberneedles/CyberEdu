@@ -28,8 +28,11 @@ export default function AdminLogin() {
       const idToken = await userCredential.user.getIdToken();
 
       // Then, create a session on the backend by sending the ID token
-      const response = await apiRequest("POST", "/api/auth/login", {
-        idToken: idToken,
+      const response = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: {
+          idToken: idToken,
+        }
       });
 
       if (response.ok) {

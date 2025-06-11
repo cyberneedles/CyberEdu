@@ -1,28 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface BackgroundContainerProps {
   children: React.ReactNode;
+  mood?: string;
 }
 
-export const BackgroundContainer: React.FC<BackgroundContainerProps> = ({ children }) => {
-  const [backgroundMood, setBackgroundMood] = useState('random-neon');
+export const BackgroundContainer: React.FC<BackgroundContainerProps> = ({ children, mood = 'random-neon' }) => {
+  const [backgroundMood] = useState(mood);
 
   useEffect(() => {
-    // No specific interval or user interaction handling for this mood
+    document.body.setAttribute('data-mood', backgroundMood);
     return () => {
-      // No cleanup needed as listeners are removed.
+      document.body.removeAttribute('data-mood');
     };
-  }, []);
+  }, [backgroundMood]);
 
   return (
-    <div className={`min-h-screen relative overflow-hidden mood-${backgroundMood}`}>
-      {/* Ultimate Responsive Background with Dynamic Mood */}
-      <div className="ultimate-homepage-bg">
-        <div className="mesh-gradient"></div>
-        <div className="gradient-orb gradient-orb-1"></div>
-        <div className="gradient-orb gradient-orb-2"></div>
-        <div className="gradient-orb gradient-orb-3"></div>
-      </div>
+    <div className="relative min-h-screen w-full overflow-hidden">
+      <div className="mesh-gradient" />
+      <div className="gradient-orb" />
       {children}
     </div>
   );

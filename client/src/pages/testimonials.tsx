@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { Testimonial, Course } from "@shared/schema";
 import { BackgroundContainer } from "@/components/BackgroundContainer";
+import { trackEvent } from '@/lib/analytics';
 
 export default function Testimonials() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -263,17 +265,21 @@ export default function Testimonials() {
             Be part of India's fastest-growing cybersecurity and development education community
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              className="btn-primary"
-              onClick={() => trackEvent("cta_click", "testimonials_page", "Talk to our team")} >
-              <i className="fas fa-phone mr-2"></i>Talk to Our Team
-            </Button>
-            <Button 
-              variant="outline" 
-              className="btn-secondary"
-              onClick={() => trackEvent("cta_click", "testimonials_page", "Schedule demo")}
+            <Button
+              variant="default"
+              size="lg"
+              className="w-full sm:w-auto"
+              onClick={() => trackEvent('cta_click', 'testimonials_page', 'Talk to our team')}
             >
-              <i className="fas fa-calendar mr-2"></i>Schedule Demo
+              Talk to our team
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full sm:w-auto"
+              onClick={() => trackEvent('cta_click', 'testimonials_page', 'Schedule demo')}
+            >
+              Schedule demo
             </Button>
           </div>
         </div>

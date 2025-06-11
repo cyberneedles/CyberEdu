@@ -102,10 +102,12 @@ export default function QuizComponent({ courseId }: QuizComponentProps) {
       };
 
       // Submit quiz results as part of lead data
-      await apiRequest("POST", "/api/leads", {
-        ...leadData,
-        source: "quiz",
-        quizResults,
+      await apiRequest('/api/leads', {
+        method: 'POST',
+        body: {
+          ...leadData,
+          quizResults,
+        }
       });
 
       trackEvent("quiz_completed", "engagement", "assessment");

@@ -25,7 +25,10 @@ export default function ContactForm() {
     setIsLoading(true);
 
     try {
-      await apiRequest("POST", "/api/contact", formData);
+      await apiRequest('/api/contact', {
+        method: 'POST',
+        body: formData
+      });
 
       trackEvent("contact_form_submit", "contact", "contact_page");
 

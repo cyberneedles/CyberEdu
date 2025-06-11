@@ -1,129 +1,109 @@
 import { useEffect, useRef, useState } from 'react';
+import React from 'react';
 
-interface UseScrollRevealOptions {
+interface ScrollRevealProps {
+  children: React.ReactNode;
+  className?: string;
   threshold?: number;
-  rootMargin?: string;
-  triggerOnce?: boolean;
   delay?: number;
+  direction?: 'up' | 'down' | 'left' | 'right';
 }
 
-export function useScrollReveal(options: UseScrollRevealOptions = {}) {
-  const {
-    threshold = 0.1,
-    rootMargin = '0px 0px -50px 0px',
-    triggerOnce = true,
-    delay = 0
-  } = options;
+interface StaggerRevealProps extends ScrollRevealProps {
+  staggerDelay?: number;
+}
 
+export function useScrollReveal() {
   const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          if (delay > 0) {
-            setTimeout(() => setIsVisible(true), delay);
-          } else {
-            setIsVisible(true);
-          }
-          
-          if (triggerOnce) {
-            observer.unobserve(element);
-          }
-        } else if (!triggerOnce) {
-          setIsVisible(false);
-        }
+        setIsVisible(entry.isIntersecting);
       },
       {
-        threshold,
-        rootMargin,
+        threshold: 0.1,
       }
     );
 
-    observer.observe(element);
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
 
     return () => {
-      if (element) {
-        observer.unobserve(element);
+      if (ref.current) {
+        observer.unobserve(ref.current);
       }
     };
-  }, [threshold, rootMargin, triggerOnce, delay]);
+  }, []);
 
   return { ref, isVisible };
 }
 
-// Component wrapper for scroll reveals
-interface ScrollRevealProps {
-  children: React.ReactNode;
-  animation?: 'fade-up' | 'slide-left' | 'slide-right' | 'scale' | 'default';
-  delay?: number;
-  className?: string;
-  threshold?: number;
-}
+export function ScrollReveal({ children, className = '', threshold = 0.1, delay = 0, direction = 'up' }: ScrollRevealProps) {
+  const { ref, isVisible } = useScrollReveal();
 
-export function ScrollReveal({ 
-  children, 
-  animation = 'default', 
-  delay = 0,
-  className = '',
-  threshold = 0.1 
-}: ScrollRevealProps) {
-  const { ref, isVisible } = useScrollReveal({ 
-    delay, 
-    threshold,
-    triggerOnce: true 
-  });
-
-  const getAnimationClass = () => {
-    switch (animation) {
-      case 'fade-up':
-        return 'reveal-fade-up';
-      case 'slide-left':
-        return 'reveal-slide-left';
-      case 'slide-right':
-        return 'reveal-slide-right';
-      case 'scale':
-        return 'reveal-scale';
+  const getTransform = () => {
+    switch (direction) {
+      case 'up':
+        return 'translateY(20px)';
+      case 'down':
+        return 'translateY(-20px)';
+      case 'left':
+        return 'translateX(20px)';
+      case 'right':
+        return 'translateX(-20px)';
       default:
-        return 'reveal-on-scroll';
+        return 'translateY(20px)';
     }
   };
 
   return (
     <div
       ref={ref}
-      className={`${getAnimationClass()} ${isVisible ? 'revealed' : ''} ${className}`}
+      className={className}
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'none' : getTransform(),
+        transition: `all 0.6s ease-out ${delay}ms`,
+      }}
     >
       {children}
     </div>
   );
 }
 
-// Staggered reveal for multiple items
-interface StaggerRevealProps {
-  children: React.ReactNode[];
-  staggerDelay?: number;
-  className?: string;
-}
+export function StaggerReveal({ children, className = '', threshold = 0.1, delay = 0, direction = 'up', staggerDelay = 100 }: StaggerRevealProps) {
+  const { ref, isVisible } = useScrollReveal();
 
-export function StaggerReveal({ 
-  children, 
-  staggerDelay = 100,
-  className = '' 
-}: StaggerRevealProps) {
-  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
+  const getTransform = () => {
+    switch (direction) {
+      case 'up':
+        return 'translateY(20px)';
+      case 'down':
+        return 'translateY(-20px)';
+      case 'left':
+        return 'translateX(20px)';
+      case 'right':
+        return 'translateX(-20px)';
+      default:
+        return 'translateY(20px)';
+    }
+  };
+
+  const childrenArray = React.Children.toArray(children);
 
   return (
     <div ref={ref} className={className}>
-      {children.map((child, index) => (
+      {childrenArray.map((child, index) => (
         <div
           key={index}
-          className={`reveal-stagger ${isVisible ? 'revealed' : ''}`}
-          style={{ transitionDelay: `${index * staggerDelay}ms` }}
+          style={{
+            opacity: isVisible ? 1 : 0,
+            transform: isVisible ? 'none' : getTransform(),
+            transition: `all 0.6s ease-out ${delay + index * staggerDelay}ms`,
+          }}
         >
           {child}
         </div>

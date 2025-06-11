@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { trackEvent } from "@/lib/analytics";
 import { useQuery } from "@tanstack/react-query";
 import type { Course } from "@shared/schema";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 interface LeadFormProps {
   source?: string;
@@ -76,9 +80,12 @@ export default function LeadForm({
     }
 
     try {
-      await apiRequest("POST", "/api/leads", {
-        ...formData,
-        source: finalSource,
+      await apiRequest('/api/leads', {
+        method: 'POST',
+        body: {
+          ...formData,
+          source: finalSource,
+        }
       });
 
       trackEvent("lead_generated", "form", finalSource);

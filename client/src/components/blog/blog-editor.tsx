@@ -113,13 +113,19 @@ export default function BlogEditor() {
       };
 
       if (editingPost) {
-        await apiRequest("PUT", `/api/blog/${editingPost.id}`, postData);
+        await apiRequest(`/api/blog/${editingPost.id}`, {
+          method: 'PUT',
+          body: postData
+        });
         toast({
           title: "Post updated",
           description: "Blog post has been updated successfully.",
         });
       } else {
-        await apiRequest("POST", "/api/blog", postData);
+        await apiRequest('/api/blog', {
+          method: 'POST',
+          body: postData
+        });
         toast({
           title: "Post created",
           description: "Blog post has been created successfully.",
@@ -163,7 +169,9 @@ export default function BlogEditor() {
     }
 
     try {
-      await apiRequest("DELETE", `/api/blog/${postId}`);
+      await apiRequest(`/api/blog/${postId}`, {
+        method: 'DELETE'
+      });
       toast({
         title: "Post deleted",
         description: "Blog post has been deleted successfully.",
